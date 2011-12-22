@@ -22,50 +22,6 @@ try:
 except (ImportError):
     pass
 
-class PanelPrinter():
-    instance = None
-
-    @classmethod
-    def get(cls):
-        if cls.instance == None:
-            cls.instance = PanelPrinter()
-        return cls.instance
-
-    def __init__(self):
-        self.name = 'package_control'
-        self.window = None
-        self.init()
-
-    def init(self):
-        if self.window == None and sublime.active_window() != None:
-            self.window = sublime.active_window()
-            self.panel  = self.window.get_output_panel(self.name)
-            if self.panel.size() == 0:
-                self.panel.settings().set("word_wrap", True)
-                self.write_callback('Package Control Messages\n' +
-                    '========================')
-
-    def show(self):
-        sublime.set_timeout(self.show_callback, 10)
-
-    def show_callback(self):
-        self.window.run_command("show_panel", {"panel": "output." + self.name})
-
-    def write(self, string):
-        callback = lambda: self.write_callback(string)
-        sublime.set_timeout(callback, 10)
-
-    def write_callback(self, string):
-        if self.window == None:
-            self.init()
-
-        self.panel.set_read_only(False)
-        edit = self.panel.begin_edit()
-
-        self.panel.insert(edit, self.panel.size(), string)
-        self.panel.end_edit(edit)
-        self.panel.set_read_only(True)
-
 
 class ThreadProgress():
     def __init__(self, thread, message, success_message):
@@ -216,9 +172,9 @@ class GitHubPackageProvider():
             url) != None
 
     def get_packages(self, repo, package_manager):
+        branch = 'master'
         branch_match = re.search(
             '^https?://github.com/[^/]+/[^/]+/tree/([^/]+)/?$', repo)
-        branch = None
         if branch_match != None:
             branch = branch_match.group(1)
 
@@ -229,6 +185,7 @@ class GitHubPackageProvider():
             'Error downloading repository.')
         if repo_json == False:
             return False
+
         try:
             repo_info = json.loads(repo_json)
         except (ValueError):
@@ -236,29 +193,26 @@ class GitHubPackageProvider():
                 ' repository ' + api_url + '.')
             return False
 
-        if branch:
-            commit_api_url = api_url + '/commits?' + \
-                urllib.urlencode({'sha': branch, 'per_page': 1})
-            commit_json = package_manager.download_url(commit_api_url,
-                'Error downloading repository.')
-            if commit_json == False:
-                return False
-            try:
-                commit_info = json.loads(commit_json)
-            except (ValueError):
-                sublime.error_message(__name__ + ': Error parsing JSON from ' +
-                    ' repository ' + commit_api_url + '.')
-                return False
-            commit_date = commit_info[0]['commit']['committer']['date']
-            download_url = 'https://nodeload.github.com/' + \
-                repo_info['owner']['login'] + '/' + \
-                repo_info['name'] + '/zipball/' + urllib.quote(branch)
-        else:
-            commit_date = repo_info['pushed_at']
-            download_url = 'https://nodeload.github.com/' + \
-                repo_info['owner']['login'] + '/' + \
-                repo_info['name'] + '/zipball/master'
+        commit_api_url = api_url + '/commits?' + \
+            urllib.urlencode({'sha': branch, 'per_page': 1})
 
+        commit_json = package_manager.download_url(commit_api_url,
+            'Error downloading repository.')
+        if commit_json == False:
+            return False
+
+        try:
+            commit_info = json.loads(commit_json)
+        except (ValueError):
+            sublime.error_message(__name__ + ': Error parsing JSON from ' +
+                ' repository ' + commit_api_url + '.')
+            return False
+
+        download_url = 'https://nodeload.github.com/' + \
+            repo_info['owner']['login'] + '/' + \
+            repo_info['name'] + '/zipball/' + urllib.quote(branch)
+
+        commit_date = commit_info[0]['commit']['committer']['date']
         timestamp = datetime.datetime.strptime(commit_date[0:19],
             '%Y-%m-%dT%H:%M:%S')
         utc_timestamp = timestamp.strftime(
@@ -267,6 +221,7 @@ class GitHubPackageProvider():
         homepage = repo_info['homepage']
         if not homepage:
             homepage = repo_info['html_url']
+
         package = {
             'name': repo_info['name'],
             'description': repo_info['description'],
@@ -288,13 +243,16 @@ class GitHubUserProvider():
         return re.search('^https?://github.com/[^/]+/?$', url) != None
 
     def get_packages(self, url, package_manager):
-        api_url = re.sub('^https?://github.com/',
-            'https://api.github.com/users/', url)
-        api_url = api_url.rstrip('/') + '/repos?per_page=100'
+        user_match = re.search('^https?://github.com/([^/]+)/?$', url)
+        user = user_match.group(1)
+
+        api_url = 'https://api.github.com/users/%s/repos?per_page=100' % user
+
         repo_json = package_manager.download_url(api_url,
             'Error downloading repository.')
         if repo_json == False:
             return False
+
         try:
             repo_info = json.loads(repo_json)
         except (ValueError):
@@ -304,7 +262,22 @@ class GitHubUserProvider():
 
         packages = {}
         for package_info in repo_info:
-            commit_date = package_info['pushed_at']
+            commit_api_url = ('https://api.github.com/repos/%s/%s/commits' + \
+                '?sha=master&per_page=1') % (user, package_info['name'])
+
+            commit_json = package_manager.download_url(commit_api_url,
+                'Error downloading repository.')
+            if commit_json == False:
+                return False
+
+            try:
+                commit_info = json.loads(commit_json)
+            except (ValueError):
+                sublime.error_message(__name__ + ': Error parsing JSON from ' +
+                    ' repository ' + commit_api_url + '.')
+                return False
+
+            commit_date = commit_info[0]['commit']['committer']['date']
             timestamp = datetime.datetime.strptime(commit_date[0:19],
                 '%Y-%m-%dT%H:%M:%S')
             utc_timestamp = timestamp.strftime(
@@ -313,6 +286,7 @@ class GitHubUserProvider():
             homepage = package_info['homepage']
             if not homepage:
                 homepage = package_info['html_url']
+
             package = {
                 'name': package_info['name'],
                 'description': package_info['description'],
@@ -780,7 +754,6 @@ class HgUpgrader(VcsUpgrader):
 
 class PackageManager():
     def __init__(self):
-        self.printer = PanelPrinter.get()
         # Here we manually copy the settings since sublime doesn't like
         # code accessing settings from threads
         self.settings = {}
@@ -801,6 +774,11 @@ class PackageManager():
 
     def compare_versions(self, version1, version2):
         def normalize(v):
+            # We prepend 0 to all date-based version numbers so that developers
+            # may switch to explicit versioning from GitHub/BitBucket
+            # versioning based on commit dates
+            if re.match('\d{4}\.\d{2}\.\d{2}\.\d{2}\.\d{2}\.\d{2}', v):
+                v = '0.' + v
             return [int(x) for x in re.sub(r'(\.0+)*$','', v).split(".")]
         return cmp(normalize(version1), normalize(version2))
 
@@ -1229,42 +1207,73 @@ class PackageManager():
 
     def print_messages(self, package, package_dir, is_upgrade, old_version):
         messages_file = os.path.join(package_dir, 'messages.json')
-        if os.path.exists(messages_file):
-            messages_fp = open(messages_file, 'r')
-            message_info = json.load(messages_fp)
-            messages_fp.close()
+        if not os.path.exists(messages_file):
+            return
 
-            shown = False
-            if not is_upgrade and message_info.get('install'):
-                install_messages = os.path.join(package_dir,
-                    message_info.get('install'))
-                message = '\n\n' + package + ':\n  '
-                with open(install_messages, 'r') as f:
+        messages_fp = open(messages_file, 'r')
+        message_info = json.load(messages_fp)
+        messages_fp.close()
+
+        output = ''
+        if not is_upgrade and message_info.get('install'):
+            install_messages = os.path.join(package_dir,
+                message_info.get('install'))
+            message = '\n\n%s:\n%s\n\n  ' % (package,
+                        ('-' * len(package)))
+            with open(install_messages, 'r') as f:
+                message += f.read().replace('\n', '\n  ')
+            output += message + '\n'
+
+        elif is_upgrade and old_version:
+            upgrade_messages = list(set(message_info.keys()) -
+                set(['install']))
+            upgrade_messages = sorted(upgrade_messages,
+                cmp=self.compare_versions, reverse=True)
+            for version in upgrade_messages:
+                if self.compare_versions(old_version, version) >= 0:
+                    break
+                if not output:
+                    message = '\n\n%s:\n%s\n' % (package,
+                        ('-' * len(package)))
+                    output += message
+                upgrade_messages = os.path.join(package_dir,
+                    message_info.get(version))
+                message = '\n  '
+                with open(upgrade_messages, 'r') as f:
                     message += f.read().replace('\n', '\n  ')
-                self.printer.write(message)
-                shown = True
+                output += message + '\n'
 
-            elif is_upgrade and old_version:
-                upgrade_messages = list(set(message_info.keys()) -
-                    set(['install']))
-                upgrade_messages = sorted(upgrade_messages,
-                    cmp=self.compare_versions, reverse=True)
-                for version in upgrade_messages:
-                    if self.compare_versions(old_version, version) >= 0:
-                        break
-                    if not shown:
-                        message = '\n\n' + package + ':'
-                        self.printer.write(message)
-                    upgrade_messages = os.path.join(package_dir,
-                        message_info.get(version))
-                    message = '\n  '
-                    with open(upgrade_messages, 'r') as f:
-                        message += f.read().replace('\n', '\n  ')
-                    self.printer.write(message)
-                    shown = True
+        if not output:
+            return
 
-            if shown:
-                self.printer.show()
+        def print_to_panel():
+            window = sublime.active_window()
+
+            views = window.views()
+            view = None
+            for _view in views:
+                if _view.name() == 'Package Control Messages':
+                    view = _view
+                    break
+
+            if not view:
+                view = window.new_file()
+                view.set_name('Package Control Messages')
+                view.set_scratch(True)
+
+            def write(string):
+                edit = view.begin_edit()
+                view.insert(edit, view.size(), string)
+                view.end_edit(edit)
+
+            if not view.size():
+                view.settings().set("word_wrap", True)
+                write('Package Control Messages\n' +
+                    '========================')
+
+            write(output)
+        sublime.set_timeout(print_to_panel, 1)
+
 
     def remove_package(self, package_name):
         installed_packages = self.list_packages()
@@ -1573,37 +1582,8 @@ class InstallPackageThread(threading.Thread, PackageInstaller):
 
 class DiscoverPackagesCommand(sublime_plugin.WindowCommand):
     def run(self):
-        thread = DiscoverPackagesThread(self.window)
-        thread.start()
-        ThreadProgress(thread, 'Loading repositories', '')
-
-
-class DiscoverPackagesThread(threading.Thread, PackageInstaller):
-    def __init__(self, window):
-        self.window = window
-        self.completion_type = 'installed'
-        threading.Thread.__init__(self)
-        PackageInstaller.__init__(self)
-
-    def run(self):
-        self.package_list = self.make_package_list(override_action='visit')
-        def show_quick_panel():
-            if not self.package_list:
-                sublime.error_message(__name__ + ': There are no packages ' +
-                    'available for discovery.')
-                return
-            self.window.show_quick_panel(self.package_list, self.on_done)
-        sublime.set_timeout(show_quick_panel, 10)
-
-    def on_done(self, picked):
-        if picked == -1:
-            return
-        package_name = self.package_list[picked][0]
-        packages = self.manager.list_available_packages()
-        def open_url():
-            sublime.active_window().run_command('open_url',
-                {"url": packages.get(package_name).get('url')})
-        sublime.set_timeout(open_url, 10)
+        self.window.run_command('open_url',
+            {'url': 'http://wbond.net/sublime_packages/community'})
 
 
 class UpgradePackageCommand(sublime_plugin.WindowCommand):
