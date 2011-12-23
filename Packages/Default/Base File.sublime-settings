@@ -169,6 +169,18 @@
 	// enabled.
 	"tab_completion": true,
 
+	// Enable auto complete to be triggered automatically when typing.
+	"auto_complete": true,
+
+	// The maximum file size where auto complete will be automatically triggered.
+	"auto_complete_size_limit": 4194304,
+
+	// The delay, in ms, before the auto complete window is shown after typing
+	"auto_complete_delay": 50,
+
+	// Controls what scopes auto complete will be triggered in
+	"auto_complete_selector": "source - comment, meta.tag",
+
 	// By default, shift+tab will only unindent if the selection spans
 	// multiple lines. When pressing shift+tab at other times, it'll insert a
 	// tab character - this allows tabs to be inserted when tab_completion is

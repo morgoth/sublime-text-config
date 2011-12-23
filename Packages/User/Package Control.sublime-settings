@@ -1,7 +1,8 @@
 {
-	"auto_upgrade_last_run": 1324507065,
+	"auto_upgrade_last_run": 1324660432,
 	"installed_packages":
 	[
+		"Alignment",
 		"Miscellaneous Emacs Commands",
 		"Package Control"
 	]
