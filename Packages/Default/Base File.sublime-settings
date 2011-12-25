@@ -179,7 +179,7 @@
 	"auto_complete_delay": 50,
 
 	// Controls what scopes auto complete will be triggered in
-	"auto_complete_selector": "source - comment, meta.tag",
+	"auto_complete_selector": "source - comment",
 
 	// By default, shift+tab will only unindent if the selection spans
 	// multiple lines. When pressing shift+tab at other times, it'll insert a

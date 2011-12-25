@@ -1,0 +1,17 @@
+{
+    // Options pass to jslint.
+    "jslint_options": "",
+
+    // Ignore errors, regex.
+    "ignore_errors":
+    [
+        // "Expected an identifier and instead saw 'undefined' \(a reserved word\)"
+        "'jQuery' was used before it was defined."
+    ],
+
+    // run jslint on save.
+    "run_on_save": true,
+
+    // debug flag.
+    "debug": false
+}

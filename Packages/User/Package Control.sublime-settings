@@ -1,9 +1,10 @@
 {
-	"auto_upgrade_last_run": 1324660432,
+	"auto_upgrade_last_run": 1324818359,
 	"installed_packages":
 	[
 		"Alignment",
 		"Miscellaneous Emacs Commands",
-		"Package Control"
+		"Package Control",
+		"sublime-jslint"
 	]
 }
