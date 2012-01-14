@@ -1,16 +1,16 @@
 {
 
-	"trim_trailing_white_space_on_save": true,
+  "trim_trailing_white_space_on_save": true,
  	// Set to true to ensure the last line of the file ends in a newline
  	// character when saving
- 	"ensure_newline_at_eof_on_save": true,
+  "ensure_newline_at_eof_on_save": true,
 
-	"translate_tabs_to_spaces": true,
+  "translate_tabs_to_spaces": true,
 
-    "tab_size": 4,
+  "tab_size": 2,
 
-	"font_size": 11,
+  "font_size": 11,
 
-    // turn off autocomplete while typing
-    "auto_complete": false
+  // turn off autocomplete while typing
+  "auto_complete": false
 }
