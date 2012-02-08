@@ -57,7 +57,6 @@
 		<string>irbrc</string>
 		<string>capfile</string>
 		<string>Gemfile</string>
-                <string>Assetfile</string>
 	</array>
 	<key>firstLineMatch</key>
 	<string>^#!/.*\bruby</string>
