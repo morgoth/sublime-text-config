@@ -11,7 +11,9 @@
 		<key>decreaseIndentPattern</key>
 		<string>^(.*\*/)?\s*\}[;\s]*$</string>
 		<key>increaseIndentPattern</key>
-		<string>^.*(\{[^}"']*|\([^)"']*)$</string>
+		<string>^.*(\{[^}"']*)$</string>
+		<key>disableIndentNextLinePattern</key>
+		<string>^\s*\{[\]})]*\s*$</string>
 	</dict>
 </dict>
 </plist>
