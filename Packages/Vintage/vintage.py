@@ -316,7 +316,7 @@ class SetActionMotion(sublime_plugin.TextCommand):
         return self.run(**args)
 
     def run(self, motion, action, motion_args = {}, motion_clip_to_line = False,
-            motion_inclusive = False, action_args = {}):
+            motion_inclusive = False, motion_linewise = False, action_args = {}):
 
         global g_input_state
 
@@ -326,6 +326,8 @@ class SetActionMotion(sublime_plugin.TextCommand):
         g_input_state.motion_clip_to_line = motion_clip_to_line
         g_input_state.action_command = action
         g_input_state.action_command_args = action_args
+        if motion_linewise:
+            g_input_state.motion_mode = MOTION_MODE_LINE
 
         eval_input(self.view)
 
@@ -593,6 +595,8 @@ class ViEval(sublime_plugin.TextCommand):
             if motion_mode != MOTION_MODE_LINE and action_command and motion_clip_to_line:
                 transform_selection_regions(self.view, lambda r: self.view.split_by_newlines(r)[0])
 
+            reindent = False
+
             if motion_mode == MOTION_MODE_LINE:
                 expand_to_full_line(self.view, visual_mode)
                 if action_command == "enter_insert_mode":
@@ -601,10 +605,13 @@ class ViEval(sublime_plugin.TextCommand):
                     # newline out of the selection to allow for this.
                     transform_selection_regions(self.view,
                         lambda r: sublime.Region(r.begin(), r.end() - 1))
+                    reindent = True
 
             if action_command:
                 # Apply the action to the selection
                 self.view.run_command(action_command, action_args)
+                if reindent and self.view.settings().get('auto_indent'):
+                    self.view.run_command('reindent')
 
         if not visual_mode:
             # Shrink the selection down to a point
@@ -765,8 +772,11 @@ class ViPasteRight(sublime_plugin.TextCommand):
             return pt + 1
 
     def run(self, edit, register = '"'):
-        transform_selection(self.view, lambda pt: self.advance(pt))
-        self.view.run_command('paste_from_register', {'forward': True, 'register': register})
+        visual_mode = self.view.has_non_empty_selection_region()
+        if not visual_mode:
+            transform_selection(self.view, lambda pt: self.advance(pt))
+        self.view.run_command('paste_from_register', {'forward': not visual_mode,
+                                                      'register': register})
 
 class ViPasteLeft(sublime_plugin.TextCommand):
     # Ensure the register is picked up from g_input_state, and that it'll be
@@ -846,6 +856,9 @@ class PasteFromRegisterCommand(sublime_plugin.TextCommand):
             sublime.status_message("Undefined register" + register)
             return
 
+        if self.view.has_non_empty_selection_region():
+            self.view.run_command('vi_delete')
+
         regions = [r for r in self.view.sel()]
         new_sel = []
 
@@ -907,7 +920,7 @@ class ReplaceCharacter(sublime_plugin.TextCommand):
             self.view.sel().add(s)
 
         if created_new_line and self.view.settings().get('auto_indent'):
-            self.view.window().run_command('reindent')
+            self.view.run_command('reindent')
 
 class CenterOnCursor(sublime_plugin.TextCommand):
     def run(self, edit):

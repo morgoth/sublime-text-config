@@ -6,7 +6,7 @@ import functools
 class SetUnsavedViewName(sublime_plugin.EventListener):
     setting_name = False
 
-    dropped_chars = string.whitespace + string.punctuation
+    dropped_chars = string.whitespace
 
     pending = 0
 
@@ -23,6 +23,9 @@ class SetUnsavedViewName(sublime_plugin.EventListener):
     def update_title(self, view):
         self.pending -= 1
         if self.pending != 0:
+            return
+
+        if view.settings().get('set_unsaved_view_name') == False:
             return
 
         cur_name = view.settings().get('auto_name')
