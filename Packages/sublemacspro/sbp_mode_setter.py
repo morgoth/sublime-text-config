@@ -16,7 +16,7 @@ SYNTAX_ALIASES = {
     'haml'  : 'ruby haml'
 }
 
-class EmacsLikeSyntaxSetter(sublime_plugin.EventListener):
+class SbpEmacsModeSetter(sublime_plugin.EventListener):
     '''
     This plugin makes Sublime Text 2 mimic Emacs' behavior of setting
     the buffer syntax based on a special "mode line" somewhere in the
