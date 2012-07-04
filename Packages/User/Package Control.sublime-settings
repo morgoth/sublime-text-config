@@ -1,5 +1,5 @@
 {
-	"auto_upgrade_last_run": 1340695518,
+	"auto_upgrade_last_run": 1341429746,
 	"installed_packages":
 	[
 		"Alignment",
@@ -9,6 +9,7 @@
 		"Package Control",
 		"Sass",
 		"sublemacspro",
-		"sublime-jslint"
+		"sublime-jslint",
+		"Theme - Soda"
 	]
 }
