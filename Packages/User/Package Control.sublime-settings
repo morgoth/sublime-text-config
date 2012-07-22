@@ -1,5 +1,6 @@
 {
 	"auto_upgrade_last_run": 1342950977,
+	"auto_upgrade": false,
 	"installed_packages":
 	[
 		"Alignment",
