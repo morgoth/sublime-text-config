@@ -5,6 +5,11 @@
   // Emacs style
   { "keys": ["ctrl+a"], "command": "move_to", "args": {"to": "bol", "extend": false} },
   { "keys": ["ctrl+e"], "command": "move_to", "args": {"to": "eol", "extend": false} },
+  { "keys": ["ctrl+e"], "command": "move_to", "args": {"to": "eol", "extend": true}, "context":
+    [
+      { "key": "sbp_emacs_has_mark", "operator": "equal", "operand": true }
+    ]
+  },
   { "keys": ["alt+v"], "command": "move", "args": {"by": "pages", "forward": false} },
   { "keys": ["ctrl+v"], "command": "move", "args": {"by": "pages", "forward": true} },
   { "keys": ["ctrl+b"], "command": "move", "args": {"by": "characters", "forward": false} },
@@ -176,6 +181,11 @@
   // Other Emacs features
   { "keys": ["alt+x", "f", "f", "a", "p"], "command": "sbp_find_file_at_point" },
 
-  // Emacs style tabs
-  { "keys": ["tab"], "command": "reindent"}
+    // Emacs style tabs
+  { "keys": ["tab"], "command": "reindent",  "context": [
+    { "key": "panel_has_focus",  "operand": false },
+    { "key": "auto_complete_visible", "operand": false },
+    { "key": "has_next_field", "operand": false },
+    { "key": "overlay_visible", "operand": false }]
+  }
 ]
