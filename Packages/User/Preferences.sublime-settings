@@ -1,5 +1,6 @@
 {
 	"auto_complete": false,
+	"bold_folder_labels": true,
 	"color_scheme": "Packages/Color Scheme - Default/Monokai.tmTheme",
 	"ensure_newline_at_eof_on_save": true,
 	"font_size": 11,
