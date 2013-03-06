@@ -27,7 +27,8 @@ class SbpUtil:
     @classmethod
     def atEOF(cls, view, point):
         nextChar = view.substr(point)
-        return ord(nextChar) == 0
+        return nextChar == '\0' or nextChar == ''
+        #return nextChar == ""
 
     @classmethod
     def add_to_kill_ring(cls, view):
@@ -59,7 +60,7 @@ class SbpKillRing:
         However, we do need some kind of sanitation to make sure
         we don't push too many white spaces."""
 
-        sanitized = string.strip(text)
+        sanitized = text.strip()
         if len(sanitized) == 0:
             return
 
@@ -84,16 +85,16 @@ class SbpKillRing:
         else:
             compare_points = end_points
 
-        if compare_points == self.kill_points:
-            # Selection hasn't moved since the last kill, append/prepend the
-            # text to the current entry
-            if forward:
-                self.buffer[self.head] = self.buffer[self.head] + text
-            else:
-                self.buffer[self.head] = text + self.buffer[self.head]
-        else:
-            # Create a new entry in the kill ring for this text
-            self.push(text)
+        #if compare_points == self.kill_points:
+        #    # Selection hasn't moved since the last kill, append/prepend the
+        #    # text to the current entry
+        #    if forward:
+        #        self.buffer[self.head] = self.buffer[self.head] + text
+        #    else:
+        #        self.buffer[self.head] = text + self.buffer[self.head]
+        #else:
+        #    # Create a new entry in the kill ring for this text
+        self.push(text)
 
         self.kill_points = begin_points
         self.kill_id = view_id
@@ -107,10 +108,21 @@ class SbpKillRing:
 sbp_kill_ring = SbpKillRing()
 
 
+class SbpInsertTextCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, text, begin, end):
+        try:
+            region = sublime.Region(long(begin), long(end))
+        except NameError:
+            region = sublime.Region(int(begin), int(end))
+            
+        num = self.view.insert(edit, region.begin(), text)
+        self.view.erase(edit, sublime.Region(region.begin() + num,
+                region.end() + num))
+
 class SbpYankChoiceCommand(sublime_plugin.TextCommand):
 
-    def insert(self, edit, idx):
-
+    def insert(self, idx):
         if idx == -1:
             return
 
@@ -119,14 +131,13 @@ class SbpYankChoiceCommand(sublime_plugin.TextCommand):
 
         text = sbp_kill_ring.get(idx)
         for s in regions:
-            num = self.view.insert(edit, s.begin(), text)
-            self.view.erase(edit, sublime.Region(s.begin() + num,
-                s.end() + num))
+            self.view.run_command("sbp_insert_text", {"text":text, "begin":s.a, "end":s.b})
 
     def run(self, edit):
         names = [sbp_kill_ring.get(idx) for idx in range(len(sbp_kill_ring)) if sbp_kill_ring.get(idx) != None]
+        self.edit = edit
         if len(names) > 0:
-            self.view.window().show_quick_panel(names, functools.partial(self.insert, edit))
+            self.view.window().show_quick_panel(names, self.insert)
 
 
 class SbpYankCommand(sublime_plugin.TextCommand):
@@ -266,7 +277,7 @@ class SbpKillLineCommand(sublime_plugin.TextCommand):
         # if we are at the end of the file, we can't kill.
         s = self.view.sel()[0]
         charAfterPoint = self.view.substr(s.end())
-        if ord(charAfterPoint) == 0:
+        if charAfterPoint == '\0' or charAfterPoint == '':
             # EOF
             return False
 
