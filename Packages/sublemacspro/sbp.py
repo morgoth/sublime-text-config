@@ -2,6 +2,11 @@ import functools as fu
 import sublime
 import sublime_plugin
 
+try:
+    import paragraph
+except ImportError:
+    import Default.paragraph as paragraph
+
 def enum(**enums):
     return type('Enum', (), enums)
 
@@ -12,6 +17,32 @@ except ImportError:
     import Default.paragraph as paragraph
 
 
+class SbpMoveToParagraphCommand(sublime_plugin.TextCommand):
+
+    def run(self, edit, forward):
+
+        # Clear all selections
+        s = self.view.sel()[0]
+        if not forward:
+            if s.begin() == 0:
+                return
+            point = paragraph.expand_to_paragraph(self.view, s.begin()-1).begin()
+        else:
+            if s.end() == self.view.size():
+                return
+            point = paragraph.expand_to_paragraph(self.view, s.end()+1).end()
+
+        self.view.sel().clear()
+        #Clear selections
+
+        if point < 0:
+            point = 0
+
+        if point > self.view.size():
+            point = self.view.size()
+
+        self.view.sel().add(sublime.Region(point, point))
+        self.view.show(self.view.sel()[0].begin())
 
 class SbpRegisterStore:
     """
@@ -306,7 +337,7 @@ class SbpRectangleDelete(sublime_plugin.TextCommand):
 
         # For each line in the region, replace the contents by what we
         # gathered from the overlay
-        current_edit = self.view.begin_edit()
+        current_edit = edit
         for l in range(top, bot + 1):
             r = sublime.Region(self.view.text_point(l, left), self.view.text_point(l, right))
             if not r.empty():
@@ -316,12 +347,9 @@ class SbpRectangleDelete(sublime_plugin.TextCommand):
         self.view.run_command("sbp_cancel_mark")
 
 
-class SbpRectangleInsert(sublime_plugin.TextCommand):
-    def run(self, edit, **args):
-        self.view.window().show_input_panel("Content:", "", fu.partial(self.replace, edit), None, None)
+class SbpRectangleInsertHandler(sublime_plugin.TextCommand):
 
-    def replace(self, edit, content):
-
+    def run(self, edit, content):
         sel = self.view.sel()[0]
         b_row, b_col = self.view.rowcol(sel.begin())
         e_row, e_col = self.view.rowcol(sel.end())
@@ -335,7 +363,7 @@ class SbpRectangleInsert(sublime_plugin.TextCommand):
 
         # For each line in the region, replace the contents by what we
         # gathered from the overlay
-        current_edit = self.view.begin_edit()
+        current_edit = edit#self.view.begin_edit()
         for l in range(top, bot + 1):
             r = sublime.Region(self.view.text_point(l, left), self.view.text_point(l, right))
             if not r.empty():
@@ -344,6 +372,16 @@ class SbpRectangleInsert(sublime_plugin.TextCommand):
             self.view.insert(current_edit, self.view.text_point(l, left), content)
         self.view.end_edit(edit)
         self.view.run_command("sbp_cancel_mark")
+
+
+class SbpRectangleInsert(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        self.view.window().show_input_panel("Content:", "", self.replace, None, None)
+
+    def replace(self, content):
+        self.view.run_command("sbp_rectangle_insert_handler", {"content": content})
+
+        
 
 class SbpCycleFocusGroup(sublime_plugin.WindowCommand):
     def run(self):
@@ -355,3 +393,54 @@ class SbpCycleFocusGroup(sublime_plugin.WindowCommand):
         else:
             next = active + 1
         window.focus_group(next)
+
+
+
+class SbpZapToCharEdit(sublime_plugin.TextCommand):
+
+    def run(self, edit, begin, end):
+        self.view.erase(edit, sublime.Region(int(begin), int(end)))
+
+
+class SbpZapToChar(sublime_plugin.TextCommand):
+
+    panel = None
+
+    def run(self, edit, **args):
+        self.edit = edit
+        self.panel = self.view.window().show_input_panel("Zap To Char:", "", self.zap, self.on_change, None)
+
+    def on_change(self, content):
+        """Search forward from the current selection to the next ocurence
+        of char"""
+
+        if self.panel == None:
+            return
+
+        self.panel.window().run_command("hide_panel")
+
+        sel = self.view.sel()
+        if (sel is None) or len(sel) != 1:
+            return
+
+        sel = sel[0]
+
+        # Convert to point
+        new_sel = sel.begin()
+        found = False
+        while not found and new_sel < self.view.size():
+            data = self.view.substr(new_sel)
+            if data == content:
+                found = True
+                break
+            new_sel += 1
+        
+        # Zap to char
+        if found:
+            self.view.run_command("sbp_zap_to_char_edit", {"begin": sel.begin(), "end": new_sel + 1})
+            self.view.run_command("sbp_cancel_mark")
+        else:
+            sublime.status_message("Character %s not found" % content)
+
+    def zap(self, content):
+       pass
