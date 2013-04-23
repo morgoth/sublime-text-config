@@ -17,6 +17,40 @@ except ImportError:
     import Default.paragraph as paragraph
 
 
+class SbpSearchFocus:
+
+    def __init__(self):
+        self.value = False
+        self.vid = -1
+
+    def set(self, val, id):
+        self.vid = id
+        self.value = val
+
+    def get(self):
+        return self.vid, self.value
+
+sbp_has_open_search = SbpSearchFocus()
+
+# The goal of this event listener is to be able to close the search panel
+# once we loose focus of the orignal search query
+class HideSearchIfFocusLost(sublime_plugin.EventListener):
+
+    def on_activated(self, view):
+        pair = sbp_has_open_search.get()
+        if pair[0] == view.id() and pair[1]:
+            sbp_has_open_search.set(False, -1)
+            view.window().run_command("hide_panel")
+
+    def on_query_context(self, view, key, operator, operand, match_all):
+        if key == "sbp_search_focus_check" and operand == True:
+            self.status = True
+            sbp_has_open_search.set(True, view.id())
+            return True
+        return None
+    
+
+
 class SbpMoveToParagraphCommand(sublime_plugin.TextCommand):
 
     def run(self, edit, forward):
@@ -65,6 +99,7 @@ class SbpRegisterStore:
 
 # Global variable to store data in the registers
 sbp_registers = SbpRegisterStore()
+sbp_point_register = SbpRegisterStore()
 
 
 class SbpWrapParagraphCommand(paragraph.WrapLinesCommand):
@@ -179,6 +214,75 @@ class SbpFixupWhitespaceCommand(sublime_plugin.TextCommand):
     def _line_end(self, c):
         return (c in ["\r", "\n", u'\x00'])
 
+
+class SbpPointToRegister(sublime_plugin.TextCommand):
+    ''' Stores the current selection, if it is a single selection, in a special
+    register. This allows quick bookkeeping of positions in the document. However
+    it stores as well the window and the region so that focussing from other
+    windows is possible'''
+    panel = None
+
+    def run(self, edit):
+        self.panel = self.view.window().show_input_panel("Store point into register:", "", \
+            self.on_done, \
+            self.on_change,\
+            self.on_cancel)
+
+    def on_done(self, register):
+        pass
+
+    def on_cancel(self):
+        pass
+
+    def on_change(self, register):
+
+        if self.panel == None:
+            return
+
+        self.panel.window().run_command("hide_panel")
+
+        sel = self.view.sel()
+        if (sel is None) or len(sel) != 1:
+            return
+
+        # Get the region
+        sbp_point_register.store(register, (self.view, self.view.window(), sel[0]))
+
+
+# For some reason switching windows does not work and we can only switch to files
+# in the current window
+class SbpPointFromRegister(sublime_plugin.TextCommand):
+    '''Restore the point from a register with a given command. This will focus the 
+    point even if it comes from another window and view'''
+
+    panel = None
+
+    def run(self, edit):
+        self.panel = self.view.window().show_input_panel("Jumpo to point from register:", "", \
+            None, \
+            fu.partial(self.insert, edit),\
+            None)
+
+    def insert(self, edit, register):
+        if not self.panel:
+            return
+
+        self.panel.window().run_command("hide_panel")
+        if register in sbp_registers:
+
+            point_data = sbp_registers.get(register)
+            point = point_data[2]
+
+            point_data[0].sel().clear()
+            point_data[0].sel().add(point)
+
+            point_data[1].focus_group(0)
+            point_data[1].focus_view(point_data[0])
+
+            # Check if the point is in view, if not scroll to
+            visible = point_data[0].visible_region()
+            if not visible.contains(point):
+                point_data[0].run_command("sbp_recenter_in_view")
 
 class SbpRegisterStore(sublime_plugin.TextCommand):
     '''
