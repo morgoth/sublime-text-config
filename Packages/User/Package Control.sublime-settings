@@ -1,16 +1,8 @@
 {
-	"auto_upgrade": false,
-	"auto_upgrade_last_run": 1342950977,
 	"installed_packages":
 	[
-		"Alignment",
 		"CoffeeScript",
-		"Cucumber",
-		"Handlebars",
-		"LESS",
 		"Package Control",
-		"Sass",
-		"sublemacspro",
-		"Theme - Soda"
+		"sublemacspro"
 	]
 }

@@ -1,7 +1,7 @@
 {
 	"auto_complete": false,
 	"bold_folder_labels": true,
-	"color_scheme": "Packages/Color Scheme - Default/Monokai.tmTheme",
+	// "color_scheme": "Packages/Color Scheme - Default/Monokai.tmTheme",
 	"ensure_newline_at_eof_on_save": true,
 	"font_size": 11,
 	"ignored_packages":
@@ -9,7 +9,7 @@
 		"Vintage"
 	],
 	"tab_size": 2,
-	"theme": "Soda Light.sublime-theme",
+	"theme": "Soda Light 3.sublime-theme",
 	"translate_tabs_to_spaces": true,
 	"trim_trailing_white_space_on_save": true
 }
