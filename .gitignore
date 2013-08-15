@@ -2,3 +2,4 @@ Backup/
 Cache/
 Index/
 Local/
+*.cache

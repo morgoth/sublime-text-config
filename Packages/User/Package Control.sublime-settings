@@ -1,9 +1,11 @@
 {
+	"auto_upgrade": false,
 	"installed_packages":
 	[
 		"CoffeeScript",
 		"Package Control",
 		"sublemacspro",
+		"Syntax Highlighting for Sass",
 		"Theme - Soda"
 	]
 }
