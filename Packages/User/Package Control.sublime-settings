@@ -3,6 +3,7 @@
 	"installed_packages":
 	[
 		"CoffeeScript",
+		"Handlebars",
 		"Package Control",
 		"sublemacspro",
 		"Syntax Highlighting for Sass",
