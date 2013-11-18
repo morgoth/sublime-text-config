@@ -4,6 +4,7 @@
 	[
 		"CoffeeScript",
 		"Handlebars",
+		"Jade",
 		"Package Control",
 		"sublemacspro",
 		"Syntax Highlighting for Sass",
