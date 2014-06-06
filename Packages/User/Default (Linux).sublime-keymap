@@ -1,5 +1,6 @@
 [
   { "keys": ["ctrl+x", "ctrl+s"], "command": "show_panel", "args": {"panel": "incremental_find", "reverse":false} },
   { "keys": ["ctrl+s"], "command": "save"},
-  {"keys": ["ctrl+/"], "command": "undo"}
+  {"keys": ["ctrl+/"], "command": "undo"},
+  { "keys": ["ctrl+shift+l"], "command": "split_selection_into_lines" }
 ]
