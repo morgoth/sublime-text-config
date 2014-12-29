@@ -3,6 +3,7 @@
 	"installed_packages":
 	[
 		"CoffeeScript",
+		"Haml",
 		"Handlebars",
 		"Jade",
 		"Package Control",
