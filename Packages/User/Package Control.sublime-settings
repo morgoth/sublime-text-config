@@ -1,11 +1,21 @@
 {
 	"auto_upgrade": false,
+	"in_process_packages":
+	[
+	],
+	"installed_dependencies":
+	[
+		"0_package_control_loader",
+		"bz2",
+		"ssl-linux"
+	],
 	"installed_packages":
 	[
 		"CoffeeScript",
 		"Haml",
 		"Handlebars",
 		"Jade",
+		"Markdown Extended",
 		"Package Control",
 		"sublemacspro",
 		"Syntax Highlighting for Sass",
